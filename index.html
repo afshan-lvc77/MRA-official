@@ -6,16 +6,19 @@
     <title>MRA Official | Developer Portfolio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .hero-section {
             background: linear-gradient(135deg, #6e8efb, #a777e3);
-            color: white; padding: 80px 0; text-align: center;
+            color: white;
+            padding: 80px 0;
+            text-align: center;
         }
         .btn-custom { background-color: #fff; color: #6e8efb; font-weight: bold; border-radius: 30px; padding: 12px 35px; text-decoration: none; display: inline-block; transition: 0.3s; }
         .btn-custom:hover { background-color: #f1f1f1; transform: scale(1.05); }
-        .app-card { border: none; border-radius: 15px; transition: 0.3s; }
+        .app-card { border: none; border-radius: 15px; transition: 0.3s; padding: 25px 15px; }
         .app-card:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-download { background: #6e8efb; color: white; border-radius: 20px; }
+        .btn-download { background: #6e8efb; color: white; border-radius: 20px; text-decoration: none; display: inline-block; padding: 8px 25px; margin-top: 15px; }
+        .app-logo-placeholder { background-color: #e9ecef; border-radius: 15px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #6c757d; margin: 0 auto 15px auto; }
         footer { padding: 20px; text-align: center; background: #333; color: white; margin-top: 50px; }
     </style>
 </head>
@@ -50,8 +53,9 @@
         <div class="row justify-content-center">
             
             <div class="col-md-5">
-                <div class="card app-card shadow-sm p-4 text-center">
+                <div class="card app-card shadow-sm text-center">
                     <div class="card-body">
+                        <div class="app-logo-placeholder">[LOGO]</div>
                         <h4 class="card-title fw-bold">ScreenBar Pro</h4>
                         <p class="card-text text-muted">Ek behtareen utility app jo aapke mobile experience ko smooth banata hai. Ise APKPure se download karein.</p>
                         <a href="https://apkpure.com/screenbar-pro/com.mra.screenbar" target="_blank" class="btn btn-download px-4 mt-2">Download APK</a>
@@ -60,8 +64,9 @@
             </div>
 
             <div class="col-md-5 mt-4 mt-md-0">
-                <div class="card app-card shadow-sm p-4 text-center border-dashed">
+                <div class="card app-card shadow-sm text-center border-dashed">
                     <div class="card-body">
+                        <div class="app-logo-placeholder" style="color: #adb5bd; border: 2px dashed #adb5bd;">[NEW]</div>
                         <h4 class="card-title fw-bold text-muted">More Apps Coming Soon</h4>
                         <p class="card-text text-muted">Main naye projects par kaam kar raha hoon. Stay tuned for updates!</p>
                         <button class="btn btn-secondary disabled px-4 mt-2">Coming Soon</button>
