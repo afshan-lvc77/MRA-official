@@ -6,19 +6,17 @@
     <title>MRA Official | Developer Portfolio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
         .hero-section {
             background: linear-gradient(135deg, #6e8efb, #a777e3);
-            color: white;
-            padding: 80px 0;
-            text-align: center;
+            color: white; padding: 80px 0; text-align: center;
         }
         .btn-custom { background-color: #fff; color: #6e8efb; font-weight: bold; border-radius: 30px; padding: 12px 35px; text-decoration: none; display: inline-block; transition: 0.3s; }
         .btn-custom:hover { background-color: #f1f1f1; transform: scale(1.05); }
-        .app-card { border: none; border-radius: 15px; transition: 0.3s; padding: 25px 15px; }
+        .app-card { border: none; border-radius: 15px; transition: 0.3s; height: 100%; padding: 20px; }
         .app-card:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-download { background: #6e8efb; color: white; border-radius: 20px; text-decoration: none; display: inline-block; padding: 8px 25px; margin-top: 15px; }
-        .app-logo-placeholder { background-color: #e9ecef; border-radius: 15px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #6c757d; margin: 0 auto 15px auto; }
+        .btn-download { background: #6e8efb; color: white; border-radius: 20px; text-decoration: none; display: inline-block; padding: 8px 20px; margin-top: auto; }
+        .app-logo { width: 100px; height: 100px; border-radius: 15px; object-fit: cover; margin-bottom: 15px; }
         footer { padding: 20px; text-align: center; background: #333; color: white; margin-top: 50px; }
     </style>
 </head>
@@ -34,7 +32,6 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="#apps">My Apps</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">GitHub</a></li>
                 </ul>
             </div>
         </div>
@@ -44,32 +41,32 @@
         <div class="container">
             <h1 class="display-4 fw-bold">Welcome to MRA Official</h1>
             <p class="lead mb-4">Mobile App Developer | Python Enthusiast | Tech Creator</p>
-            <a href="https://apkpure.com/screenbar-pro/com.mra.screenbar" target="_blank" class="btn-custom shadow">View My Apps</a>
+            <a href="#apps" class="btn-custom shadow">Browse My Apps</a>
         </div>
     </header>
 
     <div class="container mt-5" id="apps">
-        <h2 class="text-center mb-4 fw-bold">Featured Applications</h2>
-        <div class="row justify-content-center">
+        <h2 class="text-center mb-5 fw-bold">Featured Applications</h2>
+        <div class="row g-4 justify-content-center">
             
             <div class="col-md-5">
                 <div class="card app-card shadow-sm text-center">
-                    <div class="card-body">
-                        <img src="logo.png" alt="ScreenBar Pro Logo" class="app-logo mb-3" style="width: 100px; height: 100px; border-radius: 15px;">
+                    <div class="card-body d-flex flex-column">
+                        <img src="logo.png" alt="ScreenBar Pro" class="app-logo mx-auto">
                         <h4 class="card-title fw-bold">ScreenBar Pro</h4>
-                        <p class="card-text text-muted">Ek behtareen utility app jo aapke mobile experience ko smooth banata hai. Ise APKPure se download karein.</p>
-                        <a href="https://apkpure.com/screenbar-pro/com.mra.screenbar" target="_blank" class="btn btn-download px-4 mt-2">Download APK</a>
+                        <p class="card-text text-muted">Mobile experience ko smooth banane ke liye ek behtareen utility tool.</p>
+                        <a href="https://apkpure.com/screenbar-pro/com.mra.screenbar" target="_blank" class="btn btn-download">Download APK</a>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-5 mt-4 mt-md-0">
-                <div class="card app-card shadow-sm text-center border-dashed">
-                    <div class="card-body">
-                        <div class="app-logo-placeholder" style="color: #adb5bd; border: 2px dashed #adb5bd;">[NEW]</div>
-                        <h4 class="card-title fw-bold text-muted">More Apps Coming Soon</h4>
-                        <p class="card-text text-muted">Main naye projects par kaam kar raha hoon. Stay tuned for updates!</p>
-                        <button class="btn btn-secondary disabled px-4 mt-2">Coming Soon</button>
+            <div class="col-md-5">
+                <div class="card app-card shadow-sm text-center">
+                    <div class="card-body d-flex flex-column">
+                        <img src="insta-fvd-logo.png" alt="Fast Video Downloader" class="app-logo mx-auto">
+                        <h4 class="card-title fw-bold">Fast Video Downloader</h4>
+                        <p class="card-text text-muted">Kisi bhi social media platform se fast speed mein videos download karein.</p>
+                        <a href="https://apkpure.com/fast-video-downloader/com.mra.fvd" target="_blank" class="btn btn-download">Download APK</a>
                     </div>
                 </div>
             </div>
@@ -78,7 +75,7 @@
     </div>
 
     <footer>
-        <p>&copy; 2026 MRA Official | Powered by GitHub</p>
+        <p>&copy; 2026 MRA Official | Built for Family & Future</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
