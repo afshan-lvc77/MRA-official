@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRA Secret Admin Console</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --green: #00ff88; --dark: #0a0a0a; }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        
+        /* Login Box */
+        #loginBox { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:1000; }
+        .login-card { background:#1a1a1a; padding:30px; border-radius:15px; border:1px solid var(--green); text-align:center; }
+        input { width:100%; padding:12px; margin:10px 0; background:#222; border:1px solid #444; color:white; border-radius:5px; box-sizing: border-box; }
+        button { width:100%; padding:12px; background:var(--green); border:none; color:black; font-weight:bold; border-radius:5px; cursor:pointer; }
+
+        /* Dashboard */
+        .app-card { background:#1a1a1a; padding:15px; border-radius:10px; margin-bottom:15px; display:flex; align-items:center; gap:15px; border:1px solid #333; }
+        .app-icon { width:60px; height:60px; border-radius:12px; object-fit:cover; }
+        .app-info { flex-grow:1; }
+        .status-badge { font-size:10px; padding:3px 8px; border-radius:20px; text-transform:uppercase; }
+        .status-pending { background: #ffcc00; color: black; }
+        .status-live { background: var(--green); color: black; }
+        .actions { display:flex; gap:10px; }
+        .btn-approve { background:var(--green); color:black; padding:8px 15px; border-radius:5px; border:none; cursor:pointer; font-weight:600; }
+        .btn-delete { background:#ff4444; color:white; padding:8px 15px; border-radius:5px; border:none; cursor:pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="loginBox">
+        <div class="login-card">
+            <h2 style="color:var(--green)">MRA ADMIN LOGIN</h2>
+            <p style="font-size:12px; color:#888;">Only for MRA Authorized Access</p>
+            <input type="email" id="email" placeholder="Admin Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="handleLogin()">ACCESS CONSOLE</button>
+        </div>
+    </div>
+
+    <div class="container" id="adminDashboard" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>Admin <span style="color:var(--green)">Console</span></h1>
+            <button onclick="handleLogout()" style="width:auto; background:#333; color:white; padding:5px 15px;">Logout</button>
+        </div>
+        
+        <div id="stats" style="margin-bottom:20px; color:#888;">Loading apps...</div>
+
+        <div id="appList">
+            </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://eteahrnwvtddxqopspuc.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0ZWFocm53dnRkZHhxb3BzcHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTQ5MjMsImV4cCI6MjA5MTIzMDkyM30.shLfPxwnSLrJtnZ6-xsLnliep_sm9YX7tN9OTZc5DmY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- AUTH LOGIC ---
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Extra Security: Aapka email check
+            if(email !== 'aapka-email@gmail.com') {
+                alert("Bhai, tu MRA nahi hai! Access Denied.");
+                return;
+            }
+
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+            if(error) alert("Error: " + error.message);
+            else checkUser();
+        }
+
+        async function checkUser() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if(session) {
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                fetchApps();
+            }
+        }
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            location.reload();
+        }
+
+        // --- APP MANAGEMENT LOGIC ---
+        async function fetchApps() {
+            const { data: apps, error } = await _supabase
+                .from('my_apps')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if(error) return console.log(error);
+
+            document.getElementById('stats').innerText = `Total Apps: ${apps.length}`;
+            const list = document.getElementById('appList');
+            
+            list.innerHTML = apps.map(app => `
+                <div class="app-card">
+                    <img src="${app.icon_url || 'https://via.placeholder.com/60'}" class="app-icon">
+                    <div class="app-info">
+                        <strong>${app.name}</strong> 
+                        <span class="status-badge ${app.is_approved ? 'status-live' : 'status-pending'}">
+                            ${app.is_approved ? 'Live' : 'Pending'}
+                        </span>
+                        <div style="font-size:12px; color:#888; margin-top:5px;">
+                            Dev: ${app.developer_name || 'MRA'} | Size: ${app.size}
+                        </div>
+                    </div>
+                    <div class="actions">
+                        ${!app.is_approved ? `<button class="btn-approve" onclick="updateStatus(${app.id}, true)">Approve</button>` : ''}
+                        <button class="btn-delete" onclick="deleteApp(${app.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function updateStatus(id, status) {
+            const { error } = await _supabase.from('my_apps').update({ is_approved: status, status: 'approved' }).eq('id', id);
+            if(!error) fetchApps();
+        }
+
+        async function deleteApp(id) {
+            if(confirm("Bhai, pakka delete karu?")) {
+                const { error } = await _supabase.from('my_apps').delete().eq('id', id);
+                if(!error) fetchApps();
+            }
+        }
+
+        // Auto check login on load
+        checkUser();
+    </script>
+</body>
+</html>
+
