@@ -6,137 +6,206 @@
     <title>MRA Master Console</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --green: #00ff88; --dark: #0a0a0a; }
-        body { background: var(--dark); color: white; font-family: sans-serif; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
+        :root { --green: #00ff88; --dark: #0a0a0a; --card: #161616; }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
         
-        /* Top Bar */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn-main { background: var(--green); color: black; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        /* Login UI */
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--dark); display:flex; align-items:center; justify-content:center; z-index:9999; }
+        .login-card { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid var(--green); text-align: center; width: 90%; max-width: 350px; }
         
-        /* Tabs */
-        .tabs { display: flex; gap: 20px; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .tab { padding: 10px; cursor: pointer; color: #888; }
-        .tab.active { color: var(--green); border-bottom: 2px solid var(--green); }
-
-        /* App Cards */
-        .section { display: none; }
-        .section.active { display: block; }
-        .app-card { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; border: 1px solid #333; }
-        .app-icon { width: 50px; height: 50px; border-radius: 10px; }
-        .app-details { flex-grow: 1; }
-        .actions { display: flex; gap: 10px; }
+        /* Dashboard UI */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 15px; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .tab { padding: 10px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; }
+        .tab.active { color: var(--green); border-bottom-color: var(--green); }
         
-        .btn-approve { background: var(--green); color: black; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
-        .btn-delete { background: #ff4444; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
-
-        /* Upload Modal (Popup) */
-        #uploadModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; }
-        .modal-content { background:#222; padding:30px; border-radius:15px; width:90%; max-width:400px; }
-        input, select { width:100%; padding:10px; margin:10px 0; background:#333; border:1px solid #444; color:white; border-radius:5px; }
+        .btn-add { background: var(--green); color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .app-card { background: var(--card); border: 1px solid #222; padding: 15px; border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; }
+        .app-icon { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; }
+        
+        /* Modal UI */
+        #uploadModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center; z-index:1000; overflow-y: auto; }
+        .modal-box { background: var(--card); padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; margin-top: 50px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
+        .status-msg { font-size: 12px; color: var(--green); margin: 5px 0; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="top-bar">
-            <h1>MRA <span style="color:var(--green)">Console</span></h1>
-            <div>
-                <button class="btn-main" onclick="openUpload()">+ Upload New App</button>
-                <button onclick="location.reload()" style="background:none; color:#888; border:none; cursor:pointer;">Refresh</button>
-            </div>
-        </div>
-
-        <div class="tabs">
-            <div class="tab active" id="tabLive" onclick="switchTab('live')">Public Apps</div>
-            <div class="tab" id="tabPending" onclick="switchTab('pending')">User Submissions</div>
-        </div>
-
-        <div id="liveSection" class="section active">
-            <div id="liveList">Loading...</div>
-        </div>
-
-        <div id="pendingSection" class="section">
-            <div id="pendingList">No new submissions.</div>
+    <div id="loginOverlay">
+        <div class="login-card">
+            <h2 style="color:var(--green)">MRA ADMIN</h2>
+            <input type="email" id="admEmail" placeholder="Admin Email">
+            <input type="password" id="admPass" placeholder="Password">
+            <button class="btn-add" style="width:100%" onclick="login()">Login to Console</button>
         </div>
     </div>
 
+    <div class="container" id="mainDash" style="display:none;">
+        <div class="header">
+            <h1>MRA <span style="color:var(--green)">Console</span></h1>
+            <button class="btn-add" onclick="openModal()">+ Upload New App</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" id="tLive" onclick="showSection('live')">Live Apps</div>
+            <div class="tab" id="tPend" onclick="showSection('pending')">User Submissions</div>
+        </div>
+
+        <div id="appList">Loading...</div>
+    </div>
+
     <div id="uploadModal">
-        <div class="modal-content">
-            <h3>Upload New App (Direct Live)</h3>
+        <div class="modal-box">
+            <h3 style="margin-top:0">Publish New App</h3>
             <input type="text" id="appName" placeholder="App Name">
-            <input type="text" id="appDesc" placeholder="Description">
-            <input type="text" id="appSize" placeholder="Size (ex: 5MB)">
+            <textarea id="appDesc" placeholder="Description"></textarea>
+            
+            <label>App Icon (Image):</label>
+            <input type="file" id="iconFile" accept="image/*">
+            
+            <label>APK File:</label>
+            <input type="file" id="apkFile" accept=".apk">
+            
             <select id="appCat">
                 <option value="Tools">Tools</option>
-                <option value="Hacking">Hacking</option>
+                <option value="Hacking">Hacking Tools</option>
+                <option value="Social">Social</option>
             </select>
-            <p style="font-size:12px; color:var(--green)">Note: File selection logic purana wala use karein</p>
-            <button class="btn-main" onclick="saveNewApp()">Publish Now</button>
-            <button onclick="closeUpload()" style="background:none; color:white; margin-top:10px; border:none; width:100%;">Cancel</button>
+
+            <div id="upStatus" class="status-msg"></div>
+            <button id="pubBtn" class="btn-add" style="width:100%" onclick="startUpload()">Publish Now</button>
+            <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">Cancel</button>
         </div>
     </div>
 
     <script>
-        const _supabase = supabase.createClient('URL', 'KEY');
+        const SUPA_URL = 'https://eteahrnwvtddxqopspuc.supabase.co';
+        const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0ZWFocm53dnRkZHhxb3BzcHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTQ5MjMsImV4cCI6MjA5MTIzMDkyM30.shLfPxwnSLrJtnZ6-xsLnliep_sm9YX7tN9OTZc5DmY';
+        const _supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-        // Tab Switching
-        function switchTab(type) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            
-            if(type === 'live') {
-                document.getElementById('tabLive').classList.add('active');
-                document.getElementById('liveSection').classList.add('active');
-            } else {
-                document.getElementById('tabPending').classList.add('active');
-                document.getElementById('pendingSection').classList.add('active');
-            }
+        let currentSection = 'live';
+
+        // --- AUTH ---
+        async function login() {
+            const email = document.getElementById('admEmail').value;
+            const pass = document.getElementById('admPass').value;
+            if(email !== 'mohdsahidkhan911@gmail.com') return alert("Invalid Admin");
+
+            const { data, error } = await _supa.auth.signInWithPassword({ email, password: pass });
+            if(error) alert(error.message);
+            else checkSession();
         }
 
-        function openUpload() { document.getElementById('uploadModal').style.display='flex'; }
-        function closeUpload() { document.getElementById('uploadModal').style.display='none'; }
-
-        async function fetchApps() {
-            const { data: apps } = await _supabase.from('my_apps').select('*').order('id', {ascending: false});
-            
-            const liveList = document.getElementById('liveList');
-            const pendingList = document.getElementById('pendingList');
-            
-            liveList.innerHTML = ""; pendingList.innerHTML = "";
-
-            apps.forEach(app => {
-                const card = `
-                    <div class="app-card">
-                        <img src="${app.icon_url}" class="app-icon">
-                        <div class="app-details">
-                            <strong>${app.name}</strong><br>
-                            <small>Dev: ${app.developer_name || 'MRA'} | ${app.size}</small>
-                        </div>
-                        <div class="actions">
-                            ${!app.is_approved ? `<button class="btn-approve" onclick="approveApp(${app.id})">Approve</button>` : ''}
-                            <button class="btn-delete" onclick="deleteApp(${app.id})">Delete</button>
-                        </div>
-                    </div>
-                `;
-                if(app.is_approved) liveList.innerHTML += card;
-                else pendingList.innerHTML += card;
-            });
-        }
-
-        async function approveApp(id) {
-            await _supabase.from('my_apps').update({ is_approved: true, status: 'live' }).eq('id', id);
-            fetchApps();
-        }
-
-        async function deleteApp(id) {
-            if(confirm("Bhai, delete karu?")) {
-                await _supabase.from('my_apps').delete().eq('id', id);
+        async function checkSession() {
+            const { data: { session } } = await _supa.auth.getSession();
+            if(session) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('mainDash').style.display = 'block';
                 fetchApps();
             }
         }
 
-        fetchApps();
+        // --- UI LOGIC ---
+        function openModal() { document.getElementById('uploadModal').style.display='flex'; }
+        function closeModal() { document.getElementById('uploadModal').style.display='none'; }
+        function showSection(s) {
+            currentSection = s;
+            document.getElementById('tLive').className = s==='live' ? 'tab active' : 'tab';
+            document.getElementById('tPend').className = s==='pending' ? 'tab active' : 'tab';
+            fetchApps();
+        }
+
+        // --- DATA FETCH ---
+        async function fetchApps() {
+            const list = document.getElementById('appList');
+            list.innerHTML = "Refreshing data...";
+            
+            const isApproved = (currentSection === 'live');
+            const { data, error } = await _supa.from('my_apps').select('*').eq('is_approved', isApproved).order('id', {ascending: false});
+
+            if(!data || data.length === 0) { list.innerHTML = "No apps found here."; return; }
+
+            list.innerHTML = data.map(app => `
+                <div class="app-card">
+                    <img src="${app.icon_url}" class="app-icon">
+                    <div style="flex-grow:1">
+                        <strong>${app.name}</strong><br>
+                        <small style="color:#888">${app.developer_name || 'MRA'} | ${app.size}</small>
+                    </div>
+                    <div>
+                        ${!app.is_approved ? `<button class="btn-add" style="padding:5px 10px" onclick="approveApp(${app.id})">Approve</button>` : ''}
+                        <button onclick="deleteApp(${app.id})" style="background:none; border:none; color:#ff4444; cursor:pointer;">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- UPLOAD LOGIC ---
+        async function startUpload() {
+            const name = document.getElementById('appName').value;
+            const desc = document.getElementById('appDesc').value;
+            const cat = document.getElementById('appCat').value;
+            const iconF = document.getElementById('iconFile').files[0];
+            const apkF = document.getElementById('apkFile').files[0];
+
+            if(!name || !iconF || !apkF) return alert("Bhai, sab details bharo!");
+
+            const btn = document.getElementById('pubBtn');
+            const status = document.getElementById('upStatus');
+            btn.disabled = true;
+
+            try {
+                // 1. Upload Icon
+                status.innerText = "Uploading Icon...";
+                const iconPath = `icons/${Date.now()}_${iconF.name}`;
+                await _supa.storage.from('app_files').upload(iconPath, iconF);
+                const iconUrl = _supa.storage.from('app_files').getPublicUrl(iconPath).data.publicUrl;
+
+                // 2. Upload APK
+                status.innerText = "Uploading APK (Wait)...";
+                const apkPath = `apks/${Date.now()}_${apkF.name}`;
+                await _supa.storage.from('app_files').upload(apkPath, apkF);
+                const apkUrl = _supa.storage.from('app_files').getPublicUrl(apkPath).data.publicUrl;
+
+                // 3. Save to Table
+                status.innerText = "Saving to Database...";
+                const apkSize = (apkF.size / (1024*1024)).toFixed(2) + " MB";
+                
+                await _supa.from('my_apps').insert([{
+                    name: name,
+                    description: desc,
+                    icon_url: iconUrl,
+                    download_url: apkUrl,
+                    category: cat,
+                    size: apkSize,
+                    is_approved: true, // Admin upload is direct live
+                    status: 'live',
+                    developer_name: 'MRA Official'
+                }]);
+
+                alert("Mubarak ho! App Live ho gaya.");
+                location.reload();
+            } catch (err) {
+                alert("Error: " + err.message);
+                btn.disabled = false;
+            }
+        }
+
+        async function approveApp(id) {
+            await _supa.from('my_apps').update({ is_approved: true, status: 'live' }).eq('id', id);
+            fetchApps();
+        }
+
+        async function deleteApp(id) {
+            if(confirm("Pakka?")) {
+                await _supa.from('my_apps').delete().eq('id', id);
+                fetchApps();
+            }
+        }
+
+        checkSession();
     </script>
 </body>
 </html>
