@@ -3,76 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MRA Admin - APK Upload</title>
+    <title>MRA Developer Console</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background: #f4f4f4; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input, textarea, button { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background: #24b47e; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:disabled { background: #ccc; }
+        :root { --primary: #24b47e; --bg: #121212; --card: #1e1e1e; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; padding: 20px; }
+        .admin-card { background: var(--card); padding: 25px; border-radius: 15px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
+        h2 { color: var(--primary); text-align: center; margin-bottom: 25px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #aaa; }
+        input, textarea, select { width: 100%; background: #2a2a2a; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        button:disabled { background: #444; cursor: not-allowed; }
+        #status { text-align: center; margin-top: 15px; font-size: 14px; color: var(--primary); }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>MRA Store Admin</h2>
-        <input type="text" id="appName" placeholder="App ka Naam (ex: ScreenBar Pro)">
-        <textarea id="appDesc" placeholder="App ke baare mein thoda likhein..."></textarea>
+
+    <div class="admin-card">
+        <h2>MRA Play Console</h2>
+        
+        <label>App Name</label>
+        <input type="text" id="appName" placeholder="e.g. Voice Changer Pro">
+
+        <label>Category</label>
+        <select id="appCategory">
+            <option value="Tools">Tools</option>
+            <option value="Games">Games</option>
+            <option value="Hacking">Hacking</option>
+            <option value="Social">Social</option>
+        </select>
+
+        <label>Description</label>
+        <textarea id="appDesc" rows="3" placeholder="Describe your app..."></textarea>
+
+        <label>App Icon (Image)</label>
+        <input type="file" id="iconFile" accept="image/*">
+
+        <label>APK File</label>
         <input type="file" id="apkFile" accept=".apk">
-        <button onclick="uploadApp()" id="uploadBtn">Upload APK</button>
-        <p id="status" style="text-align: center; color: #666;"></p>
+
+        <button onclick="uploadApp()" id="uploadBtn">Publish App</button>
+        <div id="status"></div>
     </div>
 
     <script>
-        // --- APNI DETAILS YAHA DALO ---
+        // --- SUPABASE CONFIG ---
         const SUPABASE_URL = 'https://eteahrnwvtddxqopspuc.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0ZWFocm53dnRkZHhxb3BzcHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTQ5MjMsImV4cCI6MjA5MTIzMDkyM30.shLfPxwnSLrJtnZ6-xsLnliep_sm9YX7tN9OTZc5DmY';
-        // ------------------------------
-
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function uploadApp() {
             const name = document.getElementById('appName').value;
+            const category = document.getElementById('appCategory').value;
             const desc = document.getElementById('appDesc').value;
-            const file = document.getElementById('apkFile').files[0];
+            const iconFile = document.getElementById('iconFile').files[0];
+            const apkFile = document.getElementById('apkFile').files[0];
             const btn = document.getElementById('uploadBtn');
             const status = document.getElementById('status');
 
-            if (!name || !file) return alert("Bhai, naam aur file dono zaroori hain!");
+            if (!name || !iconFile || !apkFile) {
+                return alert("Bhai, Name, Icon aur APK teeno zaroori hain!");
+            }
 
             btn.disabled = true;
-            status.innerText = "APK Upload ho raha hai... Thoda ruko.";
+            status.innerText = "Processing... Please wait.";
 
-            // 1. Storage mein file bhejna
-            const fileName = Date.now() + "_" + file.name;
-            const { data, error: uploadError } = await _supabase.storage
-                .from('apks')
-                .upload(fileName, file);
+            try {
+                // 1. Upload Icon
+                status.innerText = "Uploading Icon...";
+                const iconName = "icons/" + Date.now() + "_" + iconFile.name;
+                const { error: iconErr } = await _supabase.storage.from('apks').upload(iconName, iconFile);
+                if (iconErr) throw iconErr;
+                const { data: iconUrl } = _supabase.storage.from('apks').getPublicUrl(iconName);
 
-            if (uploadError) {
+                // 2. Upload APK
+                status.innerText = "Uploading APK... (Time lagega)";
+                const apkName = "files/" + Date.now() + "_" + apkFile.name;
+                const { error: apkErr } = await _supabase.storage.from('apks').upload(apkName, apkFile);
+                if (apkErr) throw apkErr;
+                const { data: apkUrl } = _supabase.storage.from('apks').getPublicUrl(apkName);
+
+                // 3. Save to Database
+                status.innerText = "Saving to Database...";
+                const fileSize = (apkFile.size / (1024 * 1024)).toFixed(2) + " MB";
+                
+                const { error: dbErr } = await _supabase.from('my_apps').insert([{
+                    name: name,
+                    category: category,
+                    description: desc,
+                    icon_url: iconUrl.publicUrl,
+                    download_url: apkUrl.publicUrl,
+                    size: fileSize
+                }]);
+
+                if (dbErr) throw dbErr;
+
+                status.innerText = "Mubarak ho! App Live ho gaya.";
+                alert("App Successfully Published!");
+                location.reload();
+
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Error: " + err.message;
                 btn.disabled = false;
-                return status.innerText = "Upload Error: " + uploadError.message;
             }
-
-            // 2. File ka Public Link nikalna
-            const { data: urlData } = _supabase.storage.from('apks').getPublicUrl(fileName);
-            const publicUrl = urlData.publicUrl;
-
-            // 3. Database mein entry karna
-            status.innerText = "Database mein save ho raha hai...";
-            const { error: dbError } = await _supabase
-                .from('my_apps')
-                .insert([{ name: name, description: desc, download_url: publicUrl }]);
-
-            if (dbError) {
-                btn.disabled = false;
-                return status.innerText = "DB Error: " + dbError.message;
-            }
-
-            status.innerText = "Mubarak ho! App upload ho gaya.";
-            btn.disabled = false;
-            document.getElementById('appName').value = '';
-            document.getElementById('appDesc').value = '';
         }
     </script>
 </body>
