@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRA Admin - APK Upload</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input, textarea, button { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background: #24b47e; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>MRA Store Admin</h2>
+        <input type="text" id="appName" placeholder="App ka Naam (ex: ScreenBar Pro)">
+        <textarea id="appDesc" placeholder="App ke baare mein thoda likhein..."></textarea>
+        <input type="file" id="apkFile" accept=".apk">
+        <button onclick="uploadApp()" id="uploadBtn">Upload APK</button>
+        <p id="status" style="text-align: center; color: #666;"></p>
+    </div>
+
+    <script>
+        // --- APNI DETAILS YAHA DALO ---
+        const SUPABASE_URL = 'https://eteahrnwvtddxqopspuc.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0ZWFocm53dnRkZHhxb3BzcHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTQ5MjMsImV4cCI6MjA5MTIzMDkyM30.shLfPxwnSLrJtnZ6-xsLnliep_sm9YX7tN9OTZc5DmY';
+        // ------------------------------
+
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function uploadApp() {
+            const name = document.getElementById('appName').value;
+            const desc = document.getElementById('appDesc').value;
+            const file = document.getElementById('apkFile').files[0];
+            const btn = document.getElementById('uploadBtn');
+            const status = document.getElementById('status');
+
+            if (!name || !file) return alert("Bhai, naam aur file dono zaroori hain!");
+
+            btn.disabled = true;
+            status.innerText = "APK Upload ho raha hai... Thoda ruko.";
+
+            // 1. Storage mein file bhejna
+            const fileName = Date.now() + "_" + file.name;
+            const { data, error: uploadError } = await _supabase.storage
+                .from('apks')
+                .upload(fileName, file);
+
+            if (uploadError) {
+                btn.disabled = false;
+                return status.innerText = "Upload Error: " + uploadError.message;
+            }
+
+            // 2. File ka Public Link nikalna
+            const { data: urlData } = _supabase.storage.from('apks').getPublicUrl(fileName);
+            const publicUrl = urlData.publicUrl;
+
+            // 3. Database mein entry karna
+            status.innerText = "Database mein save ho raha hai...";
+            const { error: dbError } = await _supabase
+                .from('my_apps')
+                .insert([{ name: name, description: desc, download_url: publicUrl }]);
+
+            if (dbError) {
+                btn.disabled = false;
+                return status.innerText = "DB Error: " + dbError.message;
+            }
+
+            status.innerText = "Mubarak ho! App upload ho gaya.";
+            btn.disabled = false;
+            document.getElementById('appName').value = '';
+            document.getElementById('appDesc').value = '';
+        }
+    </script>
+</body>
+</html>
