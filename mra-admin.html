@@ -7,20 +7,34 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --green: #00ff88; --dark: #0a0a0a; --card: #161616; }
-        body { background: var(--dark); color: white; font-family: sans-serif; margin: 0; padding: 15px; }
-        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--dark); display:flex; align-items:center; justify-content:center; z-index:9999; }
+        body { background: var(--dark); color: white; font-family: sans-serif; margin: 0; padding: 15px; overflow-x: hidden; }
+        
+        /* Persistent Login Handling */
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--dark); display:flex; align-items:center; justify-content:center; z-index:9999; display: none; }
         .login-box { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid var(--green); text-align: center; width: 90%; max-width: 350px; }
+        
         .container { max-width: 900px; margin: auto; display: none; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* Tabs */
         .tabs { display: flex; gap: 15px; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .tab { padding: 10px; cursor: pointer; color: #888; }
-        .tab.active { color: var(--green); border-bottom: 2px solid var(--green); }
+        .tab { padding: 10px; cursor: pointer; color: #888; transition: 0.3s; }
+        .tab.active { color: var(--green); border-bottom: 2px solid var(--green); font-weight: bold; }
+        
         .btn-green { background: var(--green); color: black; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #uploadModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); overflow-y: auto; padding: 20px 0; }
-        .modal-box { background: var(--card); padding: 25px; border-radius: 15px; width: 95%; max-width: 600px; margin: auto; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
-        label { font-size: 12px; color: var(--green); display: block; margin-top: 10px; }
+        .app-card { background: var(--card); border: 1px solid #222; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; animation: fadeIn 0.5s; }
+        .app-icon { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #222; }
+
+        /* Full Screen Modal */
+        #uploadModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 1000; overflow-y: auto; padding: 20px 0; }
+        .modal-box { background: var(--card); padding: 25px; border-radius: 15px; width: 95%; max-width: 600px; margin: auto; border: 1px solid #333; }
+        
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--green); }
+        label { font-size: 11px; color: var(--green); text-transform: uppercase; letter-spacing: 1px; display: block; margin-top: 10px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -28,81 +42,69 @@
     <div id="loginOverlay">
         <div class="login-box">
             <h2 style="color:var(--green)">MRA ADMIN LOGIN</h2>
-            <input type="email" id="admEmail" value="mohdsahidkhan911@gmail.com">
-            <input type="password" id="admPass" placeholder="Admin Password">
-            <button class="btn-green" style="width:100%" onclick="handleLogin()">Access Console</button>
+            <input type="email" id="admEmail" value="mohdsahidkhan911@gmail.com" readonly>
+            <input type="password" id="admPass" placeholder="Enter Admin Password">
+            <button class="btn-green" style="width:100%; margin-top:10px;" onclick="handleLogin()">Unlock Console</button>
         </div>
     </div>
 
     <div class="container" id="mainDash">
         <div class="header">
             <h1>MRA <span style="color:var(--green)">Console</span></h1>
-            <button class="btn-green" onclick="openModal()">+ Publish New App</button>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-green" onclick="openModal()">+ Publish App</button>
+                <button onclick="handleLogout()" style="background:none; border:1px solid #ff4444; color:#ff4444; padding:5px 10px; border-radius:5px; cursor:pointer;">Logout</button>
+            </div>
         </div>
+
         <div class="tabs">
             <div class="tab active" id="tLive" onclick="switchTab('live')">Live Apps</div>
             <div class="tab" id="tPend" onclick="switchTab('pending')">User Submissions</div>
         </div>
-        <div id="appList">Loading...</div>
+
+        <div id="appList">Loading assets...</div>
     </div>
 
     <div id="uploadModal">
         <div class="modal-box">
-            <h3 style="color:var(--green); margin-top:0;">Publish New APK</h3>
+            <h3 style="color:var(--green); margin-top:0;">Publish New Android Project</h3>
             
-            <label>Basic Details</label>
-            <input type="text" id="appName" placeholder="App Name (ex: ScreenBar Pro)">
-            <textarea id="appDesc" placeholder="App ke bare mein thoda likhein (Description)..." rows="3"></textarea>
+            <label>App Information</label>
+            <input type="text" id="appName" placeholder="App Name (ex: Fast Video Downloader)">
+            <input type="text" id="pkgName" placeholder="Package Name (ex: com.mra.downloader)">
+            <textarea id="appDesc" placeholder="App ke bare mein details likhein..." rows="3"></textarea>
             
             <div class="grid-2">
                 <div>
-                    <label>Package Name</label>
-                    <input type="text" id="pkgName" placeholder="com.mra.app">
+                    <label>App Version</label>
+                    <input type="text" id="appVer" placeholder="1.0.0">
                 </div>
                 <div>
-                    <label>Version</label>
-                    <input type="text" id="appVer" placeholder="1.0.1">
+                    <label>Category</label>
+                    <select id="appCat">
+                        <option>Tools</option><option>Photography</option><option>Social</option>
+                        <option>Productivity</option><option>Video Players</option><option>Action Game</option>
+                        <option>Puzzle Game</option><option>Personalization</option>
+                    </select>
                 </div>
             </div>
 
-            <label>Search Keys (Comma separated)</label>
-            <input type="text" id="searchKeys" placeholder="tools, downloader, mra">
+            <label>Search Keywords (Comma separated)</label>
+            <input type="text" id="searchKeys" placeholder="mra, downloader, free, tool">
 
-            <label>Category</label>
-            <select id="appCat">
-                <optgroup label="Apps">
-                    <option>Personalization</option><option>Photography</option>
-                    <option>Productivity</option><option>Shopping</option>
-                    <option>Social</option><option>Sports</option>
-                    <option>Tools</option><option>Travel & Local</option>
-                    <option>Video Players & Editors</option><option>Weather</option>
-                </optgroup>
-                <optgroup label="Games">
-                    <option>Action</option><option>Adventure</option>
-                    <option>Arcade</option><option>Board</option>
-                    <option>Card</option><option>Casino</option>
-                    <option>Casual</option><option>Educational</option>
-                    <option>Music</option><option>Puzzle</option>
-                    <option>Racing</option><option>Role Playing (RPG)</option>
-                    <option>Simulation</option><option>Sports</option>
-                    <option>Strategy</option><option>Trivia</option>
-                    <option>Word</option>
-                </optgroup>
-            </select>
-
-            <label>Files (Icon & APK)</label>
+            <label>Graphics & APK</label>
             <div class="grid-2">
-                <div style="font-size:11px">Icon PNG:<input type="file" id="iconFile" accept="image/png"></div>
-                <div style="font-size:11px">APK File:<input type="file" id="apkFile" accept=".apk"></div>
+                <div><span style="font-size:10px">Icon (PNG):</span><input type="file" id="iconFile" accept="image/png"></div>
+                <div><span style="font-size:10px">APK File:</span><input type="file" id="apkFile" accept=".apk"></div>
             </div>
 
-            <label>Screenshots (Min: 2, Max: 7)</label>
+            <label>Screenshots (Upload 2 to 7 files)</label>
             <input type="file" id="ssFiles" accept="image/*" multiple>
 
-            <div id="upStatus" style="font-size:12px; color:var(--green); margin:10px 0; font-weight:bold;"></div>
+            <div id="upStatus" style="font-size:12px; color:var(--green); margin:10px 0; font-weight:bold; text-align:center;"></div>
             
-            <button id="pubBtn" class="btn-green" style="width:100%; margin-top:10px;" onclick="uploadData()">Start Full Upload</button>
-            <button onclick="closeModal()" style="background:none; color:#888; border:none; margin-top:15px; width:100%; cursor:pointer;">Cancel</button>
+            <button id="pubBtn" class="btn-green" style="width:100%" onclick="uploadData()">Start Official Upload</button>
+            <button onclick="closeModal()" style="background:none; color:#888; border:none; margin-top:10px; width:100%; cursor:pointer;">Cancel</button>
         </div>
     </div>
 
@@ -111,77 +113,141 @@
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0ZWFocm53dnRkZHhxb3BzcHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTQ5MjMsImV4cCI6MjA5MTIzMDkyM30.shLfPxwnSLrJtnZ6-xsLnliep_sm9YX7tN9OTZc5DmY';
         const _supa = supabase.createClient(S_URL, S_KEY);
 
+        let currentTab = 'live';
+
+        // --- SESSION MANAGEMENT ---
+        _supa.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('mainDash').style.display = 'block';
+                fetchApps();
+            } else {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('mainDash').style.display = 'none';
+            }
+        });
+
         async function handleLogin() {
-            const email = document.getElementById('admEmail').value;
+            const email = 'mohdsahidkhan911@gmail.com';
             const pass = document.getElementById('admPass').value;
-            if(email !== 'mohdsahidkhan911@gmail.com') return alert("Tu MRA nahi hai!");
             const { error } = await _supa.auth.signInWithPassword({ email, password: pass });
-            if(error) alert(error.message);
-            else { document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainDash').style.display = 'block'; fetchApps(); }
+            if(error) alert("Galti: " + error.message);
+        }
+
+        async function handleLogout() {
+            await _supa.auth.signOut();
+        }
+
+        // --- DASHBOARD LOGIC ---
+        function switchTab(t) {
+            currentTab = t;
+            document.getElementById('tLive').classList.toggle('active', t==='live');
+            document.getElementById('tPend').classList.toggle('active', t==='pending');
+            fetchApps();
         }
 
         function openModal() { document.getElementById('uploadModal').style.display='block'; }
         function closeModal() { document.getElementById('uploadModal').style.display='none'; }
 
+        async function fetchApps() {
+            const list = document.getElementById('appList');
+            list.innerHTML = "<p style='color:#888'>Scanning database...</p>";
+            
+            const isApproved = (currentTab === 'live');
+            const { data, error } = await _supa.from('my_apps')
+                .select('*')
+                .eq('is_approved', isApproved)
+                .order('created_at', {ascending:false});
+
+            if(error) return list.innerHTML = "Error fetching apps.";
+            if(!data || data.length === 0) return list.innerHTML = "<p style='color:#666'>Yahan kuch nahi hai bhai.</p>";
+
+            list.innerHTML = data.map(app => `
+                <div class="app-card">
+                    <img src="${app.icon_url}" class="app-icon" onerror="this.src='https://placehold.co/100x100?text=App'">
+                    <div style="flex-grow:1">
+                        <strong style="font-size:16px">${app.name}</strong><br>
+                        <small style="color:var(--green)">${app.pkg_name || 'no.pkg'} | v${app.version || '1.0'}</small><br>
+                        <small style="color:#666">${app.size} | ${app.category}</small>
+                    </div>
+                    <button onclick="deleteApp(${app.id})" style="background:none; border:none; color:#ff4444; cursor:pointer; font-weight:bold;">DELETE</button>
+                </div>
+            `).join('');
+        }
+
+        // --- UPLOAD LOGIC ---
         async function uploadData() {
             const btn = document.getElementById('pubBtn');
             const status = document.getElementById('upStatus');
             const ssInput = document.getElementById('ssFiles');
             
-            if(ssInput.files.length < 2 || ssInput.files.length > 7) return alert("Bhai, minimum 2 aur maximum 7 screenshots chahiye!");
-
+            // Basic Validations
+            if(ssInput.files.length < 2) return alert("Bhai, kam se kam 2 screenshots toh daalo!");
+            
             btn.disabled = true;
+            status.style.color = "var(--green)";
+
             try {
                 // 1. Upload Icon
-                status.innerText = "Uploading Icon...";
+                status.innerText = "⏳ Uploading Icon PNG...";
                 const iconF = document.getElementById('iconFile').files[0];
-                const iconPath = `icons/${Date.now()}_icon.png`;
+                const iconPath = `icons/MRA_${Date.now()}.png`;
                 await _supa.storage.from('apks').upload(iconPath, iconF);
                 const iUrl = _supa.storage.from('apks').getPublicUrl(iconPath).data.publicUrl;
 
                 // 2. Upload APK
-                status.innerText = "Uploading APK...";
+                status.innerText = "⏳ Uploading APK File...";
                 const apkF = document.getElementById('apkFile').files[0];
-                const apkPath = `apks/${Date.now()}_app.apk`;
+                const apkPath = `files/MRA_${Date.now()}.apk`;
                 await _supa.storage.from('apks').upload(apkPath, apkF);
                 const aUrl = _supa.storage.from('apks').getPublicUrl(apkPath).data.publicUrl;
 
                 // 3. Upload Screenshots
-                status.innerText = "Uploading Screenshots...";
+                status.innerText = `⏳ Uploading ${ssInput.files.length} Screenshots...`;
                 let ssUrls = [];
                 for(let i=0; i < ssInput.files.length; i++) {
-                    const path = `screenshots/${Date.now()}_ss${i}.jpg`;
+                    const path = `ss/MRA_${Date.now()}_${i}.jpg`;
                     await _supa.storage.from('apks').upload(path, ssInput.files[i]);
                     ssUrls.push(_supa.storage.from('apks').getPublicUrl(path).data.publicUrl);
                 }
 
-                // 4. Save to Database
-                status.innerText = "Saving to Database...";
-                const fSize = (apkF.size / (1024*1024)).toFixed(2) + " MB";
-                
-                await _supa.from('my_apps').insert([{
+                // 4. Final Database Entry
+                status.innerText = "🚀 Finalizing in Database...";
+                const { error } = await _supa.from('my_apps').insert([{
                     name: document.getElementById('appName').value,
-                    description: document.getElementById('appDesc').value,
                     pkg_name: document.getElementById('pkgName').value,
+                    description: document.getElementById('appDesc').value,
                     version: document.getElementById('appVer').value,
                     category: document.getElementById('appCat').value,
                     search_keys: document.getElementById('searchKeys').value,
                     icon_url: iUrl,
                     download_url: aUrl,
-                    screenshots: ssUrls, // Storing as JSON array
-                    size: fSize,
+                    screenshots: ssUrls,
+                    size: (apkF.size / (1024*1024)).toFixed(2) + " MB",
                     is_approved: true,
                     developer_name: 'MRA Official'
                 }]);
 
-                alert("Mubarak ho! App poori details ke sath upload ho gaya.");
-                location.reload();
-            } catch(e) { alert(e.message); btn.disabled = false; }
+                if(error) throw error;
+
+                status.innerText = "✅ ALL DONE! Refreshing...";
+                setTimeout(() => location.reload(), 1500);
+
+            } catch(e) {
+                alert("Upload Failed: " + e.message);
+                btn.disabled = false;
+                status.innerText = "❌ Error Occurred";
+                status.style.color = "#ff4444";
+            }
         }
 
-        // Rest of fetch/delete logic same as before...
-        function switchTab(t) { /* same */ }
-        async function fetchApps() { /* same */ }
+        async function deleteApp(id) {
+            if(confirm("Bhai, pakka delete karna hai?")) {
+                await _supa.from('my_apps').delete().eq('id', id);
+                fetchApps();
+            }
+        }
     </script>
 </body>
-</html>
+    </html>
+    
