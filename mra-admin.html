@@ -8,19 +8,27 @@
     <style>
         :root { --green: #00ff88; --dark: #0a0a0a; --card: #161616; }
         body { background: var(--dark); color: white; font-family: sans-serif; margin: 0; padding: 20px; }
+        
+        /* Login Screen */
         #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--dark); display:flex; align-items:center; justify-content:center; z-index:9999; }
         .login-box { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid var(--green); text-align: center; width: 90%; max-width: 350px; }
+        
+        /* Dashboard */
         .container { max-width: 800px; margin: auto; display: none; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .tabs { display: flex; gap: 15px; border-bottom: 1px solid #333; margin-bottom: 20px; }
         .tab { padding: 10px; cursor: pointer; color: #888; }
         .tab.active { color: var(--green); border-bottom: 2px solid var(--green); }
+        
         .btn-green { background: var(--green); color: black; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .app-card { background: var(--card); border: 1px solid #222; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
         .app-icon { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; }
+
+        /* Popup */
         #uploadModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center; }
         .modal-box { background: var(--card); padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
+        .logout-btn { background: none; color: #ff4444; border: 1px solid #ff4444; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -28,7 +36,7 @@
     <div id="loginOverlay">
         <div class="login-box">
             <h2 style="color:var(--green)">MRA ADMIN LOGIN</h2>
-            <input type="email" id="admEmail" value="mohdsahidkhan911@gmail.com">
+            <input type="email" id="admEmail" placeholder="mohdsahidkhan911@gmail.com" value="mohdsahidkhan911@gmail.com">
             <input type="password" id="admPass" placeholder="Admin Password">
             <button class="btn-green" style="width:100%" onclick="handleLogin()">Access Console</button>
         </div>
@@ -37,7 +45,10 @@
     <div class="container" id="mainDash">
         <div class="header">
             <h1>MRA <span style="color:var(--green)">Console</span></h1>
-            <button class="btn-green" onclick="openModal()">+ Upload App</button>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button class="btn-green" style="width:auto" onclick="openModal()">+ Upload App</button>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
         </div>
 
         <div class="tabs">
@@ -45,40 +56,56 @@
             <div class="tab" id="tPend" onclick="switchTab('pending')">User Submissions</div>
         </div>
 
-        <div id="appList">Loading...</div>
+        <div id="appList">Loading apps...</div>
     </div>
 
     <div id="uploadModal">
         <div class="modal-box">
-            <h3>Publish to Store</h3>
+            <h3>Publish New APK</h3>
             <input type="text" id="appName" placeholder="App Name">
             <input type="file" id="iconFile" accept="image/*">
             <input type="file" id="apkFile" accept=".apk">
             <div id="upStatus" style="font-size:12px; color:var(--green); margin:5px 0;"></div>
-            <button id="pubBtn" class="btn-green" style="width:100%" onclick="uploadData()">Publish Now</button>
+            <button id="pubBtn" class="btn-green" style="width:100%" onclick="uploadData()">Start Upload</button>
             <button onclick="closeModal()" style="background:none; color:#888; border:none; margin-top:10px; width:100%; cursor:pointer;">Cancel</button>
         </div>
     </div>
 
     <script>
-        const S_URL = 'YOUR_SUPABASE_URL'; 
-        const S_KEY = 'YOUR_ANON_KEY';
+        const S_URL = 'https://eteahrnwvtddxqopspuc.supabase.co'; 
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0ZWFocm53dnRkZHhxb3BzcHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTQ5MjMsImV4cCI6MjA5MTIzMDkyM30.shLfPxwnSLrJtnZ6-xsLnliep_sm9YX7tN9OTZc5DmY';
         const _supa = supabase.createClient(S_URL, S_KEY);
 
         let currentTab = 'live';
 
+        // Check for existing session
+        window.onload = async () => {
+            const { data: { session } } = await _supa.auth.getSession();
+            if (session) showDashboard();
+        };
+
         async function handleLogin() {
             const email = document.getElementById('admEmail').value;
             const pass = document.getElementById('admPass').value;
-            if(email !== 'mohdsahidkhan911@gmail.com') return alert("Access Denied");
+
+            if(email !== 'mohdsahidkhan911@gmail.com') {
+                alert("Bhai, tu MRA nahi hai!"); return;
+            }
 
             const { data, error } = await _supa.auth.signInWithPassword({ email, password: pass });
-            if(error) alert(error.message);
-            else {
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('mainDash').style.display = 'block';
-                fetchApps();
-            }
+            if(error) alert("Error: " + error.message);
+            else showDashboard();
+        }
+
+        async function handleLogout() {
+            await _supa.auth.signOut();
+            location.reload();
+        }
+
+        function showDashboard() {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainDash').style.display = 'block';
+            fetchApps();
         }
 
         function switchTab(t) {
@@ -93,11 +120,13 @@
 
         async function fetchApps() {
             const list = document.getElementById('appList');
-            list.innerHTML = "Refreshing...";
+            list.innerHTML = "Fetching...";
+            
             const isApproved = (currentTab === 'live');
             const { data } = await _supa.from('my_apps').select('*').eq('is_approved', isApproved).order('id', {ascending:false});
 
             if(!data || data.length === 0) { list.innerHTML = "No apps found."; return; }
+
             list.innerHTML = data.map(app => `
                 <div class="app-card">
                     <img src="${app.icon_url}" class="app-icon">
@@ -114,31 +143,39 @@
             const name = document.getElementById('appName').value;
             const iconF = document.getElementById('iconFile').files[0];
             const apkF = document.getElementById('apkFile').files[0];
-            if(!name || !iconF || !apkF) return alert("All fields required");
+            if(!name || !iconF || !apkF) return alert("Pehle file select karo bhai!");
 
             const btn = document.getElementById('pubBtn');
             const status = document.getElementById('upStatus');
             btn.disabled = true;
 
             try {
-                // FIXED: USING YOUR EXISTING 'apks' BUCKET
+                // FIXED: USING YOUR 'apks' BUCKET
+                status.innerText = "Uploading Icon...";
                 const iconPath = `icons/${Date.now()}_${iconF.name}`;
                 await _supa.storage.from('apks').upload(iconPath, iconF);
                 const iUrl = _supa.storage.from('apks').getPublicUrl(iconPath).data.publicUrl;
 
+                status.innerText = "Uploading APK...";
                 const apkPath = `apks/${Date.now()}_${apkF.name}`;
                 await _supa.storage.from('apks').upload(apkPath, apkF);
                 const aUrl = _supa.storage.from('apks').getPublicUrl(apkPath).data.publicUrl;
 
+                status.innerText = "Saving to Database...";
                 const fSize = (apkF.size / (1024*1024)).toFixed(2) + " MB";
+
                 await _supa.from('my_apps').insert([{
                     name: name, icon_url: iUrl, download_url: aUrl, 
-                    size: fSize, is_approved: true, status: 'live', developer_name: 'MRA Official'
+                    size: fSize, is_approved: true, developer_name: 'MRA Official'
                 }]);
 
-                alert("App Published Successfully!");
+                alert("App Published!");
                 location.reload();
-            } catch(e) { alert(e.message); btn.disabled = false; }
+            } catch(e) { 
+                alert("Upload failed: " + e.message); 
+                btn.disabled = false; 
+                status.innerText = "";
+            }
         }
 
         async function deleteApp(id) {
