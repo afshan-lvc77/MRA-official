@@ -4,8 +4,12 @@ body { background-color: #FFFFFF; color: #000000; }
 /* Header */
 .header { display: flex; justify-content: space-between; align-items: center; height: 60px; padding: 0 15px; border-bottom: 1px solid #eeeeee; }
 .header h1 { font-size: 20px; font-weight: bold; margin: 0; }
-.menu-btn { cursor: pointer; padding: 10px; background: none; border: none; }
-.menu-btn svg { width: 24px; height: 24px; fill: #000000; }
+
+/* APK Download Button */
+.apk-btn { display: flex; align-items: center; background-color: #10B981; color: #FFFFFF; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; gap: 8px; transition: background-color 0.2s, transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.apk-btn:hover { background-color: #059669; transform: scale(1.02); }
+.apk-logo { width: 22px; height: 22px; border-radius: 4px; object-fit: cover; }
+.apk-icon { width: 18px; height: 18px; fill: #FFFFFF; }
 
 /* Main Content */
 .container { padding: 20px; max-width: 600px; margin: 0 auto; }
