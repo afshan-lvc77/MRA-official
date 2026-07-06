@@ -1,4 +1,6 @@
-// UI Elements ko connect karna (Jaise Kotlin mein findViewById karte hain)
+// ==========================================
+// UI Elements ko connect karna (findViewById ki tarah)
+// ==========================================
 const urlInput = document.getElementById('urlInput');
 const actionBtn = document.getElementById('actionBtn');
 const actionIcon = document.getElementById('actionIcon');
@@ -46,38 +48,29 @@ actionBtn.addEventListener('click', async () => {
     }
 });
 
-// Download API Logic
+// ==========================================
+// NEW DOWNLOAD LOGIC INTEGRATION
+// ==========================================
+
+// download.js wale DownloadService ka object banana 
+// ('status' id pass ki hai taaki wahan messages dikh sakein)
+const downloader = new DownloadService('status');
+
+// Download Button Click Logic
 downloadBtn.addEventListener('click', async () => {
     const rawUrl = urlInput.value.trim();
+    
     if (!rawUrl) {
         alert("Please paste a link first!");
         return;
     }
 
-    statusDiv.innerHTML = '<span style="color: #666;">Processing link... Please wait...</span>';
+    // Button ko disable kar do taaki user baar-baar click na kare
     downloadBtn.disabled = true;
 
-    // Cloudflare Worker API call
-    const gatewayUrl = `https://fvd-gateway.mra-official-contact.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
+    // Pura API aur download ka kaam ab download.js handle karega
+    await downloader.startDownload(rawUrl);
 
-    try {
-        const response = await fetch(gatewayUrl);
-        const data = await response.json();
-
-        if (data && data.download_link) {
-            urlInput.value = ''; 
-            actionIcon.innerHTML = svgPaste; 
-            
-            statusDiv.innerHTML = `
-                <p style="color: #10B981; margin-bottom: 10px; font-weight: bold;">Video Extracted!</p>
-                <a href="${data.download_link}" target="_blank" class="download-link">Click here to Download MP4</a>
-            `;
-        } else {
-            statusDiv.innerHTML = `<span style="color: red;">Error: Invalid link or server error.</span>`;
-        }
-    } catch (error) {
-        statusDiv.innerHTML = `<span style="color: red;">Network error. Please try again.</span>`;
-    }
-    
+    // Processing khatam hone ke baad button wapas enable kar do
     downloadBtn.disabled = false;
 });
