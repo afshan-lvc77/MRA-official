@@ -15,9 +15,6 @@ class DownloadService {
         
         const color = isError ? "#f43f5e" : "#10B981"; // Red for error, Green for success
         this.statusElement.innerHTML = `<p style="color: ${color}; font-weight: bold; margin-top: 10px;">${message}</p>`;
-        
-        // Browser ka default alert bhi de sakte hain agar chaho
-        // alert(message);
     }
 
     // Android ka onStartCommand aur fetchAndDownload equivalent
@@ -58,21 +55,17 @@ class DownloadService {
     // Android ka startRealDownload equivalent
     startRealDownload(finalLink) {
         try {
-            /* 
-               NOTE FOR WEB: 
-               Browsers CORS ki wajah se direct chunk-by-chunk file save nahi karne dete 
-               jaise Android mein FileOutputStream karta hai.
-               Isliye hum ek hidden link banate hain aur usko click karwate hain 
-               taaki browser ka apna native download manager chalu ho jaye.
-            */
-            
             const fileName = `Vidnux_${Date.now()}.mp4`; // File name generate karna
 
             // Ek hidden <a> tag create kar rahe hain
             const a = document.createElement('a');
             a.href = finalLink;
             a.download = fileName; // Browser ko batana ki file save karni hai
-            a.target = '_blank';   // Naye tab mein kholne ke liye (incase download direct start na ho)
+            
+            // POP-UP FIX: 
+            // a.target = '_blank'; <-- Isko HATA DIYA gaya hai. 
+            // Asynchronous API call ke baad naya tab kholne par browser popup block kar deta tha.
+            // Ab ye smoothly usi tab me silent download trigger karega.
             
             // Document mein daal kar click karwana aur fir hata dena
             document.body.appendChild(a);
@@ -82,9 +75,9 @@ class DownloadService {
             // Success Message (Android ka showFinalNotification)
             this.statusElement.innerHTML = `
                 <div style="margin-top: 15px; padding: 15px; border: 1px solid #10B981; border-radius: 8px; background: #f9f9f9;">
-                    <p style="color: #10B981; font-weight: bold; margin-bottom: 10px;">✓ Download Started!</p>
+                    <p style="color: #10B981; font-weight: bold; margin-bottom: 10px;">✓ Download Command Sent!</p>
                     <p style="font-size: 14px; color: #555;">Agar download automatically start nahi hua, toh niche click karein:</p>
-                    <a href="${finalLink}" target="_blank" download="${fileName}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background: #10B981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Manual Download</a>
+                    <a href="${finalLink}" download="${fileName}" style="display: inline-block; margin-top: 10px; padding: 10px 20px; background: #10B981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Manual Download</a>
                 </div>
             `;
             
@@ -92,4 +85,4 @@ class DownloadService {
             this.showToast("❌ Download shuru karne mein dikkat aayi!", true);
         }
     }
-              }
+}
