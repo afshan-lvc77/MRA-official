@@ -90,12 +90,7 @@ class DownloadService {
 
             this.isDownloading = false; // Download Pura, warning OFF
 
-            // SUCCESS NOTIFICATION BHEJNE KA LOGIC
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("Download successful", {
-                    body: "video saved to gellary"
-                });
-            }
+            // Notification wala logic yahan se hata diya gaya hai
 
             this.statusElement.innerHTML = `
                 <div style="margin-top: 15px; padding: 15px; border: 1px solid #10B981; border-radius: 8px; background: #f9f9f9;">
@@ -120,5 +115,4 @@ class DownloadService {
             `;
         }
     }
-        }
-        
+                }
