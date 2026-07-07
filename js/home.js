@@ -1,4 +1,22 @@
 // ==========================================
+// ON PAGE LOAD: Ask for Permissions
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    // Notification Permission Request
+    if ("Notification" in window) {
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    console.log("Notification permission mil gayi!");
+                    // Optional: Swagat notification bhejne ke liye niche wali line uncomment karein
+                    // new Notification("Vidnux", { body: "Vidnux mein aapka swagat hai!" });
+                }
+            });
+        }
+    }
+});
+
+// ==========================================
 // UI Elements ko connect karna
 // ==========================================
 const urlInput = document.getElementById('urlInput');
